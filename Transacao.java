@@ -1,8 +1,8 @@
 public class Transacao {
-    String tipo; // entrada ou saida
+    String tipo;
     String categoria;
     double valor;
-    String data; // MM/yyyy
+    String data;
 
     public Transacao(String tipo, String categoria, double valor, String data) {
         this.tipo = tipo;
