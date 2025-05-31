@@ -1,4 +1,4 @@
-import java.util.*;
+import java.util.*; 
 
 public class FinanceUtils {
     static Scanner scanner = new Scanner(System.in);
@@ -14,16 +14,21 @@ public class FinanceUtils {
                 scanner.next();
             }
             opcao = scanner.nextInt();
-            scanner.nextLine(); // consumir quebra de linha
+            scanner.nextLine();
 
             switch (opcao) {
-                case 1 -> cadastrarTransacao();
+                case 1 -> {
+                    cadastrarTransacao();
+                    verificarAlertaGasto();
+                    mostrarBadge();
+                }
                 case 2 -> visualizarResumoMensal();
                 case 3 -> configurarMetaGasto();
                 case 4 -> visualizarPercentualGastoMetasPorMes();
                 case 5 -> percentualSaidaEntradaPorCategoria();
                 case 6 -> fluxoCaixaMensal();
                 case 7 -> comparativoEntradasSaidas();
+                case 8 -> mostrarGrafico();
                 case 0 -> System.out.println("Saindo...");
                 default -> System.out.println("Opção inválida.");
             }
@@ -39,6 +44,7 @@ public class FinanceUtils {
         System.out.println("5 - Percentual Saída / Entrada por Categoria (Mês)");
         System.out.println("6 - Fluxo de Caixa Mensal");
         System.out.println("7 - Comparativo Entradas x Saídas ao Longo do Tempo");
+        System.out.println("8 - Gráfico (Entrada e Saída por Mês)");
         System.out.println("0 - Sair");
         System.out.print("Escolha uma opção: ");
     }
@@ -145,7 +151,6 @@ public class FinanceUtils {
         }
     }
 
-    // Nova função para mostrar percentual saída / entrada por categoria no mês
     public static void percentualSaidaEntradaPorCategoria() {
         System.out.print("Digite o mês e ano (MM/yyyy): ");
         String data = scanner.nextLine();
@@ -155,7 +160,6 @@ public class FinanceUtils {
             return;
         }
 
-        // Soma entradas e saídas por categoria no mês
         Map<String, Double> entradasCat = new HashMap<>();
         Map<String, Double> saidasCat = new HashMap<>();
         double totalEntradas = 0;
@@ -180,7 +184,6 @@ public class FinanceUtils {
 
         System.out.println("\nPercentual de entradas e saídas por categoria para " + data + ":");
 
-        // Categorias unidas (entrada ou saída)
         Set<String> categorias = new HashSet<>();
         categorias.addAll(entradasCat.keySet());
         categorias.addAll(saidasCat.keySet());
@@ -197,9 +200,7 @@ public class FinanceUtils {
         }
     }
 
-    // Nova função para fluxo de caixa mensal (entradas, saídas, saldo)
     public static void fluxoCaixaMensal() {
-        // Map mes -> entradas e saidas
         Map<String, Double> entradasMes = new TreeMap<>();
         Map<String, Double> saidasMes = new TreeMap<>();
 
@@ -224,9 +225,7 @@ public class FinanceUtils {
         }
     }
 
-    // Nova função para comparativo entradas e saídas ao longo do tempo
     public static void comparativoEntradasSaidas() {
-        // Map mes -> entradas e saidas
         Map<String, Double> entradasMes = new TreeMap<>();
         Map<String, Double> saidasMes = new TreeMap<>();
 
@@ -248,6 +247,79 @@ public class FinanceUtils {
             double e = entradasMes.getOrDefault(mes, 0.0);
             double s = saidasMes.getOrDefault(mes, 0.0);
             System.out.printf("%-7s | R$ %9.2f | R$ %9.2f\n", mes, e, s);
+        }
+    }
+
+    public static void mostrarGrafico() {
+        System.out.print("Digite o mês e ano para o gráfico (MM/yyyy): ");
+        String data = scanner.nextLine();
+
+        if (!validarData(data)) {
+            System.out.println("Data inválida.");
+            return;
+        }
+
+        double totalEntrada = 0;
+        double totalSaida = 0;
+
+        for (Transacao t : transacoes) {
+            if (t.data.equals(data)) {
+                if (t.tipo.equals("entrada")) totalEntrada += t.valor;
+                else totalSaida += t.valor;
+            }
+        }
+
+        double total = totalEntrada + totalSaida;
+        if (total == 0) {
+            System.out.println("Nenhuma transação nesse mês.");
+            return;
+        }
+
+        int fatiaEntrada = (int) Math.round((totalEntrada / total) * 20);
+        int fatiaSaida = (int) Math.round((totalSaida / total) * 20);
+
+        System.out.println("\nGráfico de Pizza (Entrada vs Saída) para " + data + ":");
+        System.out.print("Entrada: ");
+        for (int i = 0; i < fatiaEntrada; i++) System.out.print("●");
+        System.out.printf(" (R$ %.2f)\n", totalEntrada);
+
+        System.out.print("Saída:   ");
+        for (int i = 0; i < fatiaSaida; i++) System.out.print("●");
+        System.out.printf(" (R$ %.2f)\n", totalSaida);
+    }
+
+    public static void verificarAlertaGasto() {
+        Map<String, Double> saidasMes = new HashMap<>();
+
+        for (Transacao t : transacoes) {
+            if (t.tipo.equals("saida")) {
+                saidasMes.put(t.data, saidasMes.getOrDefault(t.data, 0.0) + t.valor);
+            }
+        }
+
+        for (Map.Entry<String, Double> entry : saidasMes.entrySet()) {
+            if (entry.getValue() > 200) {
+                System.out.println("⚠️ Alerta: gasto anormal no mês " + entry.getKey() +
+                        " (R$ " + String.format("%.2f", entry.getValue()) + ")");
+                System.out.println("Notificação enviada para gabrielneri2012@hotmail.com");
+            }
+        }
+    }
+
+    public static void mostrarBadge() {
+        Map<String, Double> saidasMes = new HashMap<>();
+
+        for (Transacao t : transacoes) {
+            if (t.tipo.equals("saida")) {
+                saidasMes.put(t.data, saidasMes.getOrDefault(t.data, 0.0) + t.valor);
+            }
+        }
+
+        for (Map.Entry<String, Double> entry : saidasMes.entrySet()) {
+            if (entry.getValue() < 100) {
+                System.out.println("🏅 Badge conquistado para o mês " + entry.getKey() +
+                        ": Parabéns! Boa saúde financeira com saída menor que R$ 100.");
+            }
         }
     }
 }
